@@ -1,40 +1,34 @@
 use {
-    crate::{
-        commands::{
-            Command, CommandGroup, account::AccountCommand, cluster::ClusterCommand,
-            config::ConfigCommand, stake::StakeCommand, transaction::TransactionCommand,
-            vote::VoteCommand,
-        },
-        context::ScillaContext,
-        ui::print_error,
+    crate::commands::{
+        Command, account::AccountCommand, cluster::ClusterCommand, config::ConfigCommand,
+        stake::StakeCommand, vote::VoteCommand,
     },
-    console::style,
-    inquire::{InquireError, Select, Text},
-    std::{fmt::Display, path::PathBuf, process::exit, str::FromStr},
+    inquire::{Select, Text},
+    std::str::FromStr,
 };
+
 pub fn prompt_for_command() -> anyhow::Result<Command> {
     let top_level = Select::new(
         "Choose a command group:",
         vec![
-            CommandGroup::Account,
-            CommandGroup::Cluster,
-            CommandGroup::Stake,
-            CommandGroup::Vote,
-            CommandGroup::Transaction,
-            CommandGroup::ScillaConfig,
-            CommandGroup::Exit,
+            "Account",
+            "Cluster",
+            "Stake",
+            "Vote",
+            "ScillaConfig",
+            "Exit",
         ],
     )
     .prompt()?;
 
     let command = match top_level {
-        CommandGroup::Cluster => Command::Cluster(prompt_cluster()?),
-        CommandGroup::Stake => Command::Stake(prompt_stake()?),
-        CommandGroup::Account => Command::Account(prompt_account()?),
-        CommandGroup::Vote => Command::Vote(prompt_vote()?),
-        CommandGroup::ScillaConfig => Command::ScillaConfig(prompt_config()?),
-        CommandGroup::Transaction => Command::Transaction(prompt_transaction()?),
-        CommandGroup::Exit => Command::Exit,
+        "Cluster" => Command::Cluster(prompt_cluster()?),
+        "Stake" => Command::Stake(prompt_stake()?),
+        "Account" => Command::Account(prompt_account()?),
+        "Vote" => Command::Vote(prompt_vote()?),
+        "ScillaConfig" => Command::ScillaConfig(prompt_config()?),
+        "Exit" => Command::Exit,
+        _ => unreachable!(),
     };
 
     Ok(command)
@@ -44,188 +38,133 @@ fn prompt_cluster() -> anyhow::Result<ClusterCommand> {
     let choice = Select::new(
         "Cluster Command:",
         vec![
-            ClusterCommand::EpochInfo,
-            ClusterCommand::CurrentSlot,
-            ClusterCommand::BlockHeight,
-            ClusterCommand::BlockTime,
-            ClusterCommand::Validators,
-            ClusterCommand::ClusterVersion,
-            ClusterCommand::SupplyInfo,
-            ClusterCommand::Inflation,
-            ClusterCommand::GoBack,
+            "Epoch Info",
+            "Current Slot",
+            "Block Height",
+            "Block Time",
+            "Validators",
+            "Cluster Version",
+            "Supply Info",
+            "Inflation",
+            "Go Back",
         ],
     )
     .prompt()?;
 
-    Ok(choice)
+    Ok(match choice {
+        "Epoch Info" => ClusterCommand::Epoch,
+        "Current Slot" => ClusterCommand::Slot,
+        "Block Height" => ClusterCommand::BlockHeight,
+        "Block Time" => ClusterCommand::BlockTime,
+        "Validators" => ClusterCommand::Validators,
+        "Cluster Version" => ClusterCommand::ClusterVersion,
+        "Supply Info" => ClusterCommand::Supply,
+        "Inflation" => ClusterCommand::Inflation,
+        "Go Back" => ClusterCommand::GoBack,
+        _ => unreachable!(),
+    })
 }
 
 fn prompt_stake() -> anyhow::Result<StakeCommand> {
     let choice = Select::new(
         "Stake Command:",
         vec![
-            StakeCommand::Create,
-            StakeCommand::Delegate,
-            StakeCommand::Deactivate,
-            StakeCommand::Withdraw,
-            StakeCommand::Merge,
-            StakeCommand::Split,
-            StakeCommand::Show,
-            StakeCommand::History,
-            StakeCommand::GoBack,
+            "Create Stake Account",
+            "Delegate Stake",
+            "Deactivate Stake",
+            "Withdraw Stake",
+            "Merge Stake",
+            "Split Stake",
+            "Show Stake Account",
+            "Stake History",
+            "Go Back",
         ],
     )
     .prompt()?;
 
-    Ok(choice)
+    Ok(match choice {
+        "Create Stake Account" => StakeCommand::Create,
+        "Delegate Stake" => StakeCommand::Delegate,
+        "Deactivate Stake" => StakeCommand::Deactivate,
+        "Withdraw Stake" => StakeCommand::Withdraw,
+        "Merge Stake" => StakeCommand::Merge,
+        "Split Stake" => StakeCommand::Split,
+        "Show Stake Account" => StakeCommand::Show,
+        "Stake History" => StakeCommand::History,
+        "Go Back" => StakeCommand::GoBack,
+        _ => unreachable!(),
+    })
 }
 
 fn prompt_account() -> anyhow::Result<AccountCommand> {
     let choice = Select::new(
         "Account Command:",
         vec![
-            AccountCommand::FetchAccount,
-            AccountCommand::Balance,
-            AccountCommand::Transfer,
-            AccountCommand::Airdrop,
-            AccountCommand::LargestAccounts,
-            AccountCommand::NonceAccount,
-            AccountCommand::GoBack,
+            "Fetch Account info",
+            "Get Account Balance",
+            "Transfer SOL",
+            "Request Airdrop",
+            "Confirm a pending transaction",
+            "Fetch cluster’s largest accounts",
+            "Inspect or manage Nonce accounts",
+            "Go Back",
         ],
     )
     .prompt()?;
 
-    Ok(choice)
+    Ok(match choice {
+        "Fetch Account info" => AccountCommand::Fetch,
+        "Get Account Balance" => AccountCommand::Balance,
+        "Transfer SOL" => AccountCommand::Transfer,
+        "Request Airdrop" => AccountCommand::Airdrop,
+        "Confirm a pending transaction" => AccountCommand::ConfirmTransaction,
+        "Fetch cluster’s largest accounts" => AccountCommand::LargestAccounts,
+        "Inspect or manage Nonce accounts" => AccountCommand::NonceAccount,
+        "Go Back" => AccountCommand::GoBack,
+        _ => unreachable!(),
+    })
 }
 
 fn prompt_vote() -> anyhow::Result<VoteCommand> {
     let choice = Select::new(
         "Vote Command:",
         vec![
-            VoteCommand::CreateVoteAccount,
-            VoteCommand::AuthorizeVoter,
-            VoteCommand::WithdrawFromVoteAccount,
-            VoteCommand::ShowVoteAccount,
-            VoteCommand::CloseVoteAccount,
-            VoteCommand::GoBack,
+            "Create Vote Account",
+            "Authorize Voter",
+            "Authorize Withdrawer",
+            "Show Vote Account",
         ],
     )
     .prompt()?;
 
-    Ok(choice)
-}
-
-fn prompt_transaction() -> anyhow::Result<TransactionCommand> {
-    let choice = Select::new(
-        "Transaction Command:",
-        vec![
-            TransactionCommand::CheckConfirmation,
-            TransactionCommand::FetchStatus,
-            TransactionCommand::FetchTransaction,
-            TransactionCommand::SendTransaction,
-            TransactionCommand::GoBack,
-        ],
-    )
-    .prompt()?;
-
-    Ok(choice)
+    Ok(match choice {
+        "Create Vote Account" => VoteCommand::CreateVoteAccount,
+        "Authorize Voter" => VoteCommand::AuthorizeVoter,
+        "Show Vote Account" => VoteCommand::ShowVoteAccount,
+        _ => unreachable!(),
+    })
 }
 
 fn prompt_config() -> anyhow::Result<ConfigCommand> {
     let choice = Select::new(
         "ScillaConfig Command:",
-        vec![
-            ConfigCommand::Show,
-            ConfigCommand::Edit,
-            ConfigCommand::GoBack,
-        ],
+        vec!["Show ScillaConfig", "Set ScillaConfig", "Edit ScillaConfig"],
     )
     .prompt()?;
 
-    Ok(choice)
+    Ok(match choice {
+        "Show ScillaConfig" => ConfigCommand::Show,
+        "Generate ScillaConfig" => ConfigCommand::Generate,
+        "Edit ScillaConfig" => ConfigCommand::Edit,
+        _ => unreachable!(),
+    })
 }
 
-pub fn prompt_input_data<T>(msg: &str) -> T
+pub fn prompt_data<T>(msg: &str) -> anyhow::Result<T>
 where
     T: FromStr,
-    T::Err: std::fmt::Display,
+    <T as FromStr>::Err: ToString + Send + Sync + 'static,
 {
-    loop {
-        let input = match Text::new(msg).prompt() {
-            Ok(v) => v,
-            Err(e) => match e {
-                InquireError::OperationInterrupted | InquireError::OperationCanceled => {
-                    println!("{}", style("Operation cancelled. Exiting.").yellow().bold());
-                    exit(0);
-                }
-                _ => {
-                    print_error(format!("Invalid input: {e}. Please try again."));
-                    continue;
-                }
-            },
-        };
-
-        match input.parse::<T>() {
-            Ok(value) => return value,
-            Err(e) => print_error(format!("Parse error : {e}. Please try again.")),
-        }
-    }
-}
-
-pub fn prompt_select_data<T>(msg: &str, options: Vec<T>) -> T
-where
-    T: Display + Clone,
-{
-    loop {
-        match Select::new(msg, options.clone()).prompt() {
-            Ok(v) => return v,
-            Err(e) => match e {
-                InquireError::OperationInterrupted | InquireError::OperationCanceled => {
-                    println!("{}", style("Operation cancelled. Exiting.").yellow().bold());
-                    exit(0);
-                }
-                _ => {
-                    print_error(format!("Invalid Choice: {e}. Please try again."));
-                    continue;
-                }
-            },
-        }
-    }
-}
-
-pub fn prompt_keypair_path(msg: &str, ctx: &ScillaContext) -> PathBuf {
-    let default_path = ctx.keypair_path().display().to_string();
-
-    loop {
-        let input = match Text::new(msg)
-            .with_default(&default_path)
-            .with_help_message("Press Enter to use the default keypair")
-            .prompt()
-        {
-            Ok(v) => v,
-            Err(e) => match e {
-                InquireError::OperationInterrupted | InquireError::OperationCanceled => {
-                    println!("{}", style("Operation cancelled. Exiting.").yellow().bold());
-                    exit(0);
-                }
-                _ => {
-                    print_error(format!("Invalid input: {e}. Please try again."));
-                    continue;
-                }
-            },
-        };
-
-        let input = if input.trim().is_empty() {
-            &default_path
-        } else {
-            &input
-        };
-
-        match PathBuf::from_str(input) {
-            Ok(value) => return value,
-            Err(e) => {
-                print_error(format!("Invalid path: {e}. Please try again."));
-            }
-        }
-    }
+    let input = Text::new(msg).prompt()?;
+    T::from_str(&input).map_err(|e| anyhow::anyhow!(e.to_string()))
 }

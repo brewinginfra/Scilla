@@ -1,6 +1,6 @@
 use {
     crate::{
-        commands::CommandFlow, config::ScillaConfig, context::ScillaContext, error::ScillaResult,
+        commands::CommandExec, config::ScillaConfig, context::ScillaContext, error::ScillaResult,
         prompt::prompt_for_command,
     },
     console::style,
@@ -11,12 +11,18 @@ pub mod config;
 pub mod constants;
 pub mod context;
 pub mod error;
-pub mod misc;
 pub mod prompt;
 pub mod ui;
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> ScillaResult<()> {
+    let config = match ScillaConfig::load() {
+        Ok(config) => config,
+        Err(e) => return Err(e.into()),
+    };
+
+    let ctx = ScillaContext::from_config(config)?;
+
     println!(
         "{}",
         style("⚡ Scilla — Hacking Through the Solana Matrix")
@@ -24,20 +30,17 @@ async fn main() -> ScillaResult<()> {
             .cyan()
     );
 
-    let config = ScillaConfig::load()?;
-    let mut ctx = ScillaContext::try_from(config)?;
-
     loop {
         let command = prompt_for_command()?;
 
-        let res = command.process_command(&mut ctx).await;
+        let res = command.process_command(&ctx).await?;
 
         match res {
-            CommandFlow::Process(_) => continue,
-            CommandFlow::GoBack => continue,
-            CommandFlow::Exit => break,
+            CommandExec::Process(_) => continue,
+            CommandExec::GoBack => continue,
+            CommandExec::Exit => break,
         }
     }
 
-    Ok(CommandFlow::Exit)
+    Ok(CommandExec::Exit)
 }

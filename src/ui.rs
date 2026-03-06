@@ -1,9 +1,6 @@
-use {
-    console::style,
-    indicatif::{ProgressBar, ProgressStyle},
-};
+use indicatif::{ProgressBar, ProgressStyle};
 
-pub async fn show_spinner<F, T>(message: &str, fut: F)
+pub async fn show_spinner<F, T>(message: &str, fut: F) -> anyhow::Result<T>
 where
     F: std::future::Future<Output = anyhow::Result<T>>,
 {
@@ -17,15 +14,7 @@ where
     spinner.set_message(message.to_string());
 
     let result = fut.await;
+    spinner.finish_with_message("✅ Done");
 
-    match &result {
-        Ok(_) => spinner.finish_with_message("✅ Done"),
-        Err(e) => {
-            spinner.finish_with_message(format!("{}", style(format!("Error : {}", e)).red().bold()))
-        }
-    }
-}
-
-pub fn print_error(message: impl std::fmt::Display) {
-    println!("{}", style(message).red().bold());
+    result
 }
